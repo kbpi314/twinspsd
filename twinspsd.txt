@@ -1,0 +1,82 @@
+############
+# TwinsPsD #
+############
+
+###
+# Directory structure
+###
+
+inputs/
+	metadata.csv
+
+outputs/
+	
+
+
+
+
+###
+# Kneaddata
+### 
+
+# activate env
+source activate Ensemble
+
+# set path
+EXPATH=/sc/arion/projects/clemej05a/kevin/mennonites/outputs/ensemble_kneaddata/
+KDPATH=/sc/arion/projects/clemej05a/kevin/twinspsd/outputs/kneaddata/
+
+# create proj
+# in /sc/arion/projects/clemej05a/kevin/twinspsd/outputs/kneaddata
+# probably case sensitive
+create_project.py -p twinspsd -d /sc/arion/projects/clemej05a/kevin/twinspsd/inputs/fastqs/ -t Kneaddata -st clemente_lab
+
+# (1) in ensemble_config.yaml, set concat lane files to false
+sed -i 's/concat_lane_files: true/concat_lane_files: false/g' $KDPATH/configuration/twinspsd/ensemble_config.yaml
+
+# (2) tweak kneaddata_template.sh probably borrow old kneaddata_template.sh
+# 72h at 30k is probably fine
+cp $EXPATH/configuration/mennonites/kneaddata_template.sh $KDPATH/configuration/twinspsd/
+
+# (3) tool_config.yaml needs 
+cp $EXPATH/configuration/mennonites/tool_config.yaml $KDPATH/configuration/mennonites/
+
+# gen scripts
+gen_scripts.py -p mennonites # -a true
+
+
+
+
+
+
+
+
+
+
+###
+# Metaphlan
+###
+
+# activate env
+source activate Ensemble
+
+# Mp4 for the new batch
+create_project.py -p ensemble_mp4_new4 -d /sc/arion/projects/clemej05a/kevin/twinspsd/inputs/ -t metaphlan -st clemente_lab
+
+# cp tool config from twinsra_mp4
+cp /sc/arion/projects/clemej05a/kevin/mennonites/outputs/ensemble_mp4/configuration/ensemble_mp4_new2/tool_config.yaml /sc/arion/projects/clemej05a/kevin/twinspsd/outputs/ensemble_mp4/configuration/ensemble_mp4/
+
+# make sure tool_config has this in MP4 section
+# '/sc/arion/projects/CVDlung/databases/ensemble-metaphlan'
+
+# cp ensemble config from twinsra
+# change ensemble_config concat lane files FALSE
+# change data files directory 
+cp /sc/arion/projects/clemej05a/kevin/mennonites/outputs/ensemble_mp4/configuration/ensemble_mp4_new2/ensemble_config.yaml /sc/arion/projects/clemej05a/kevin/twinspsd/outputs/ensemble_mp4/configuration/ensemble_mp4/
+
+# gen scripts
+gen_scripts.py -p ensemble_mp4_new4 # -a true
+
+# combine taxa tables
+gen_taxa_tables.py -p ensemble_mp4_new3 --tool_threshold 1
+
